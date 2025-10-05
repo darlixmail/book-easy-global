@@ -23,6 +23,7 @@ export type Database = {
           client_name: string
           client_phone: string
           created_at: string
+          employee_id: string | null
           id: string
           notes: string | null
           service_id: string
@@ -37,6 +38,7 @@ export type Database = {
           client_name: string
           client_phone: string
           created_at?: string
+          employee_id?: string | null
           id?: string
           notes?: string | null
           service_id: string
@@ -51,6 +53,7 @@ export type Database = {
           client_name?: string
           client_phone?: string
           created_at?: string
+          employee_id?: string | null
           id?: string
           notes?: string | null
           service_id?: string
@@ -110,11 +113,48 @@ export type Database = {
         }
         Relationships: []
       }
+      employees: {
+        Row: {
+          active: boolean
+          business_id: string
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          photo_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          business_id: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          photo_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          business_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          photo_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       schedules: {
         Row: {
           business_id: string
           created_at: string
           day_of_week: number
+          employee_id: string | null
           end_time: string
           id: string
           is_available: boolean
@@ -124,6 +164,7 @@ export type Database = {
           business_id: string
           created_at?: string
           day_of_week: number
+          employee_id?: string | null
           end_time: string
           id?: string
           is_available?: boolean
@@ -133,6 +174,7 @@ export type Database = {
           business_id?: string
           created_at?: string
           day_of_week?: number
+          employee_id?: string | null
           end_time?: string
           id?: string
           is_available?: boolean
@@ -147,6 +189,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_employees: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          service_id?: string
+        }
+        Relationships: []
       }
       services: {
         Row: {
