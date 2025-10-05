@@ -37,7 +37,10 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!session) {
+  // Demo mode: allow access without authentication
+  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
+  
+  if (!session && !isDemoMode) {
     return <Navigate to="/admin/login" replace />;
   }
 

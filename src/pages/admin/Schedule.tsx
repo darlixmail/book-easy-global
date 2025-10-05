@@ -27,9 +27,16 @@ export default function Schedule() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // Demo mode check
+  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
+
   const { data: business } = useQuery({
     queryKey: ['business'],
     queryFn: async () => {
+      if (isDemoMode) {
+        return { id: 'demo-business', name: 'Demo Beauty Salon', user_id: 'demo-user' };
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -46,8 +53,19 @@ export default function Schedule() {
 
   const { data: schedules } = useQuery({
     queryKey: ['schedules', business?.id],
-    enabled: !!business?.id,
+    enabled: !!business?.id || isDemoMode,
     queryFn: async () => {
+      if (isDemoMode) {
+        return [
+          { id: '1', business_id: 'demo-business', day_of_week: 1, start_time: '09:00', end_time: '18:00', is_available: true },
+          { id: '2', business_id: 'demo-business', day_of_week: 2, start_time: '09:00', end_time: '18:00', is_available: true },
+          { id: '3', business_id: 'demo-business', day_of_week: 3, start_time: '09:00', end_time: '18:00', is_available: true },
+          { id: '4', business_id: 'demo-business', day_of_week: 4, start_time: '09:00', end_time: '18:00', is_available: true },
+          { id: '5', business_id: 'demo-business', day_of_week: 5, start_time: '09:00', end_time: '17:00', is_available: true },
+          { id: '6', business_id: 'demo-business', day_of_week: 6, start_time: '10:00', end_time: '14:00', is_available: false },
+        ];
+      }
+      
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
@@ -61,6 +79,9 @@ export default function Schedule() {
 
   const upsertMutation = useMutation({
     mutationFn: async (scheduleData: any) => {
+      if (isDemoMode) {
+        throw new Error('Cannot update schedule in demo mode');
+      }
       const { error } = await supabase.from('schedules').upsert([scheduleData]);
       if (error) throw error;
     },
@@ -68,8 +89,8 @@ export default function Schedule() {
       queryClient.invalidateQueries({ queryKey: ['schedules'] });
       toast.success('Schedule updated successfully');
     },
-    onError: () => {
-      toast.error('Failed to update schedule');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update schedule');
     },
   });
 
@@ -100,9 +121,21 @@ export default function Schedule() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      {isDemoMode && (
+        <div className="bg-primary/10 border-b border-primary/20 py-2 text-center">
+          <p className="text-sm font-medium text-primary">
+            🎭 Demo Mode - All data is simulated. Changes won't be saved.
+          </p>
+        </div>
+      )}
+      
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/admin/dashboard')}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate(isDemoMode ? '/admin/dashboard?demo=true' : '/admin/dashboard')}
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('admin.dashboard')}
           </Button>

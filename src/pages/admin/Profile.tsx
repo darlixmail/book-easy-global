@@ -23,9 +23,24 @@ export default function Profile() {
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
 
+  // Demo mode check
+  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
+
   const { data: business } = useQuery({
     queryKey: ['business'],
     queryFn: async () => {
+      if (isDemoMode) {
+        return {
+          id: 'demo-business',
+          user_id: 'demo-user',
+          name: 'Demo Beauty Salon',
+          contact_email: 'contact@demosalon.com',
+          contact_phone: '+1-555-0100',
+          address: '123 Main Street, New York, NY 10001',
+          description: 'A premier beauty salon offering a wide range of professional services including haircuts, coloring, manicures, and more. Our experienced team is dedicated to making you look and feel your best.'
+        };
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -52,6 +67,10 @@ export default function Profile() {
 
   const upsertMutation = useMutation({
     mutationFn: async (businessData: any) => {
+      if (isDemoMode) {
+        throw new Error('Cannot update profile in demo mode');
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -75,8 +94,8 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ['business'] });
       toast.success('Business profile updated successfully');
     },
-    onError: () => {
-      toast.error('Failed to update business profile');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update business profile');
     },
   });
 
@@ -94,9 +113,21 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      {isDemoMode && (
+        <div className="bg-primary/10 border-b border-primary/20 py-2 text-center">
+          <p className="text-sm font-medium text-primary">
+            🎭 Demo Mode - All data is simulated. Changes won't be saved.
+          </p>
+        </div>
+      )}
+      
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/admin/dashboard')}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate(isDemoMode ? '/admin/dashboard?demo=true' : '/admin/dashboard')}
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('admin.dashboard')}
           </Button>
@@ -162,8 +193,8 @@ export default function Profile() {
                 />
               </div>
 
-              <Button type="submit" disabled={upsertMutation.isPending}>
-                {upsertMutation.isPending ? t('common.loading') : t('common.save')}
+              <Button type="submit" disabled={upsertMutation.isPending || isDemoMode}>
+                {isDemoMode ? 'Demo Mode' : upsertMutation.isPending ? t('common.loading') : t('common.save')}
               </Button>
             </form>
           </CardContent>
