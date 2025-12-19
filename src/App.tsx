@@ -8,6 +8,7 @@ import "./i18n/config";
 
 // Client Pages
 import Home from "./pages/client/Home";
+import ServiceSelection from "./pages/client/ServiceSelection";
 import BookingFlow from "./pages/client/BookingFlow";
 import BookingSuccess from "./pages/client/BookingSuccess";
 
@@ -31,6 +32,7 @@ const App = () => (
         <Routes>
           {/* Client Routes */}
           <Route path="/" element={<Home />} />
+          <Route path="/book" element={<ServiceSelection />} />
           <Route path="/book/:serviceId" element={<BookingFlow />} />
           <Route path="/booking/success" element={<BookingSuccess />} />
 
