@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,7 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, User } from 'lucide-react';
+import { demoBusiness, demoSchedules, demoEmployees } from '@/data/demoData';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const daysOfWeek = [
   { value: 0, label: 'Sunday' },
@@ -25,10 +28,17 @@ export default function Schedule() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(
+    isDemoMode ? demoEmployees[0].id : null
+  );
 
   const { data: business } = useQuery({
     queryKey: ['business'],
     queryFn: async () => {
+      if (isDemoMode) {
+        return demoBusiness;
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -44,9 +54,12 @@ export default function Schedule() {
   });
 
   const { data: schedules } = useQuery({
-    queryKey: ['schedules', business?.id],
+    queryKey: ['schedules', business?.id, selectedEmployee],
     enabled: !!business?.id,
     queryFn: async () => {
+      if (isDemoMode) {
+        return demoSchedules.filter(s => s.employee_id === selectedEmployee);
+      }
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
@@ -60,6 +73,10 @@ export default function Schedule() {
 
   const upsertMutation = useMutation({
     mutationFn: async (scheduleData: any) => {
+      if (isDemoMode) {
+        toast.info('Demo mode: Changes are not saved');
+        return;
+      }
       const { error } = await supabase.from('schedules').upsert([scheduleData]);
       if (error) throw error;
     },
@@ -80,7 +97,6 @@ export default function Schedule() {
     const startTime = field === 'start_time' ? value : (existingSchedule?.start_time || '09:00');
     const endTime = field === 'end_time' ? value : (existingSchedule?.end_time || '17:00');
 
-    // Validate time order
     if (field === 'start_time' || field === 'end_time') {
       if (startTime >= endTime) {
         toast.error('Start time must be before end time');
@@ -108,6 +124,8 @@ export default function Schedule() {
     return schedules?.find((s) => s.day_of_week === dayOfWeek);
   };
 
+  const selectedEmployeeData = demoEmployees.find(e => e.id === selectedEmployee);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -127,9 +145,39 @@ export default function Schedule() {
       <div className="container mx-auto px-4 py-8">
         <h1 className="mb-6 text-3xl font-bold">{t('admin.schedule')}</h1>
 
+        {isDemoMode && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Select Staff Member</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={selectedEmployee || ''} onValueChange={setSelectedEmployee}>
+                <TabsList className="flex flex-wrap h-auto gap-2">
+                  {demoEmployees.map((employee) => (
+                    <TabsTrigger key={employee.id} value={employee.id} className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      {employee.name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+              {selectedEmployeeData && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {selectedEmployeeData.role} • {selectedEmployeeData.email}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
-            <CardTitle>Working Hours</CardTitle>
+            <CardTitle>
+              {isDemoMode && selectedEmployeeData 
+                ? `Working Hours - ${selectedEmployeeData.name}`
+                : 'Working Hours'
+              }
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {daysOfWeek.map((day) => {

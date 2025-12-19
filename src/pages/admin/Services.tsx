@@ -18,6 +18,8 @@ import {
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { demoBusiness, demoServices } from '@/data/demoData';
+import { Badge } from '@/components/ui/badge';
 
 export default function Services() {
   const { t } = useTranslation();
@@ -28,10 +30,14 @@ export default function Services() {
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState('');
   const [price, setPrice] = useState('');
+  const isDemoMode = localStorage.getItem('demo_mode') === 'true';
 
   const { data: business } = useQuery({
     queryKey: ['business'],
     queryFn: async () => {
+      if (isDemoMode) {
+        return demoBusiness;
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -50,6 +56,9 @@ export default function Services() {
     queryKey: ['admin-services', business?.id],
     enabled: !!business?.id,
     queryFn: async () => {
+      if (isDemoMode) {
+        return demoServices;
+      }
       const { data, error } = await supabase
         .from('services')
         .select('*')
@@ -63,6 +72,10 @@ export default function Services() {
 
   const createMutation = useMutation({
     mutationFn: async (serviceData: any) => {
+      if (isDemoMode) {
+        toast.info('Demo mode: Changes are not saved');
+        return;
+      }
       const { error } = await supabase.from('services').insert([serviceData]);
       if (error) throw error;
     },
@@ -79,6 +92,10 @@ export default function Services() {
 
   const deleteMutation = useMutation({
     mutationFn: async (serviceId: string) => {
+      if (isDemoMode) {
+        toast.info('Demo mode: Changes are not saved');
+        return;
+      }
       const { error } = await supabase.from('services').delete().eq('id', serviceId);
       if (error) throw error;
     },
@@ -109,7 +126,6 @@ export default function Services() {
     const durationNum = parseInt(duration);
     const priceNum = parseFloat(price);
 
-    // Client-side validation
     if (durationNum <= 0) {
       toast.error('Duration must be greater than 0');
       return;
@@ -134,6 +150,16 @@ export default function Services() {
       active: true,
     });
   };
+
+  // Group services by category for demo mode
+  const groupedServices = isDemoMode 
+    ? (services || []).reduce((acc: Record<string, any[]>, s: any) => {
+        const category = s.category || 'Other';
+        if (!acc[category]) acc[category] = [];
+        acc[category].push(s);
+        return acc;
+      }, {} as Record<string, any[]>)
+    : { 'All Services': services || [] };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -199,7 +225,7 @@ export default function Services() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price ($) *</Label>
+                    <Label htmlFor="price">Price (₪) *</Label>
                     <Input
                       id="price"
                       type="number"
@@ -219,33 +245,43 @@ export default function Services() {
           </Dialog>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {services?.map((service) => (
-            <Card key={service.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>{service.name}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteMutation.mutate(service.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {service.description && (
-                  <p className="text-sm text-muted-foreground">{service.description}</p>
-                )}
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{service.duration_minutes} min</span>
-                  <span className="font-bold text-primary">${service.price}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {Object.entries(groupedServices).map(([category, categoryServices]) => (
+          <div key={category} className="mb-8">
+            {isDemoMode && (
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                {category}
+                <Badge variant="outline">{(categoryServices as any[])?.length || 0}</Badge>
+              </h2>
+            )}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {(categoryServices as any[])?.map((service: any) => (
+                <Card key={service.id}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>{service.name}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(service.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {service.description && (
+                      <p className="text-sm text-muted-foreground">{service.description}</p>
+                    )}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{service.duration_minutes} min</span>
+                      <span className="font-bold text-primary">₪{service.price}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

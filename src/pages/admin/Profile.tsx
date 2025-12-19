@@ -10,12 +10,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, Mail } from 'lucide-react';
+import { demoBusiness } from '@/data/demoData';
+import { Badge } from '@/components/ui/badge';
 
 export default function Profile() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isDemoMode = localStorage.getItem('demo_mode') === 'true';
 
   const [businessName, setBusinessName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -26,6 +29,9 @@ export default function Profile() {
   const { data: business } = useQuery({
     queryKey: ['business'],
     queryFn: async () => {
+      if (isDemoMode) {
+        return demoBusiness;
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -52,6 +58,10 @@ export default function Profile() {
 
   const upsertMutation = useMutation({
     mutationFn: async (businessData: any) => {
+      if (isDemoMode) {
+        toast.info('Demo mode: Changes are not saved');
+        return;
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -83,7 +93,6 @@ export default function Profile() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Client-side validation
     if (businessName.trim().length > 200) {
       toast.error('Business name must be less than 200 characters');
       return;
@@ -126,6 +135,34 @@ export default function Profile() {
 
       <div className="container mx-auto px-4 py-8">
         <h1 className="mb-6 text-3xl font-bold">{t('admin.profile')}</h1>
+
+        {isDemoMode && business && (
+          <Card className="mb-6 max-w-2xl">
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">{business.name}</h2>
+                  <p className="text-muted-foreground mt-1">{business.description}</p>
+                </div>
+                <Badge>Demo</Badge>
+              </div>
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span>{business.address}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span>{business.contact_phone}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span>{business.contact_email}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="max-w-2xl">
           <CardHeader>
