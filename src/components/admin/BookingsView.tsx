@@ -190,7 +190,7 @@ export default function BookingsView({ bookings, title, showAllLink, onShowAll }
                   </div>
                   <div className="space-y-1">
                     {bookingsByEmployee[employee.id]?.slice(0, 8).map(booking => (
-                      <div key={booking.id} className="p-2 bg-muted/30 rounded text-xs">
+                      <div key={booking.id} className={`p-2 rounded text-xs ${booking.status === 'cancelled' ? 'bg-red-100 dark:bg-red-950/30 border border-red-200 dark:border-red-800' : 'bg-muted/30'}`}>
                         <div className="flex items-center gap-1 mb-1">
                           <button 
                             onClick={() => handleCustomerClick(booking.customer_id)}
@@ -198,13 +198,18 @@ export default function BookingsView({ bookings, title, showAllLink, onShowAll }
                           >
                             {getCustomerIcon(booking.customer_type)}
                           </button>
-                          <span className="font-medium truncate">{booking.client_name}</span>
+                          <span className={`font-medium truncate ${booking.status === 'cancelled' ? 'text-red-600 line-through' : ''}`}>{booking.client_name}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-muted-foreground">{booking.booking_time}</span>
-                          {booking.is_prepaid && (
-                            <DollarSign className="h-3 w-3 text-green-600" />
-                          )}
+                          <div className="flex items-center gap-1">
+                            {booking.is_prepaid && (
+                              <DollarSign className="h-3 w-3 text-green-600" />
+                            )}
+                            {booking.status === 'cancelled' && (
+                              <Badge variant="destructive" className="text-[10px] px-1 py-0">X</Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}

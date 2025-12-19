@@ -132,41 +132,21 @@ export default function RevenueStatisticsCard({ bookings }: RevenueStatisticsCar
     };
   }, [filteredBookings]);
 
-  // Quick summary for the card preview
-  const todayStats = useMemo(() => {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const todayBookings = bookings.filter(b => b.booking_date === today);
-    const completed = todayBookings.filter(b => b.status === 'completed');
-    const pending = todayBookings.filter(b => b.status === 'pending' || b.status === 'confirmed');
-    return {
-      expected: calculateRevenue(completed) + calculateRevenue(pending),
-      received: calculateRevenue(completed),
-    };
-  }, [bookings]);
 
   return (
     <>
       <Card 
-        className="cursor-pointer transition-all hover:shadow-medium"
+        className="cursor-pointer transition-all hover:shadow-medium hover:scale-[1.02]"
         onClick={() => setIsOpen(true)}
       >
-        <CardHeader>
+        <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
             Revenue Statistics
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Today's Expected</p>
-              <p className="text-xl font-bold text-primary">₪{todayStats.expected.toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Received</p>
-              <p className="text-xl font-bold text-green-600">₪{todayStats.received.toLocaleString()}</p>
-            </div>
-          </div>
+          <p className="text-sm text-muted-foreground">Click to view detailed revenue breakdown</p>
         </CardContent>
       </Card>
 
