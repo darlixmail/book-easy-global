@@ -36,6 +36,12 @@ export default function Login() {
     }
   };
 
+  const handleDemoMode = () => {
+    localStorage.setItem('demo_mode', 'true');
+    toast.success('Demo mode enabled');
+    navigate('/admin/dashboard');
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-hero p-4">
       <div className="absolute top-4 right-4">
@@ -75,6 +81,19 @@ export default function Login() {
               {loading ? t('common.loading') : t('admin.signIn')}
             </Button>
           </form>
+          
+          <div className="mt-4 pt-4 border-t">
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={handleDemoMode}
+            >
+              Enter Demo Mode
+            </Button>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              For design/development purposes only
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

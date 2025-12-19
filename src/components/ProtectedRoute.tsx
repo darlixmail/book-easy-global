@@ -10,15 +10,19 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const isDemoMode = localStorage.getItem('demo_mode') === 'true';
 
   useEffect(() => {
-    // Get initial session
+    if (isDemoMode) {
+      setLoading(false);
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
     });
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -27,7 +31,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isDemoMode]);
 
   if (loading) {
     return (
@@ -37,7 +41,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!session) {
+  if (!session && !isDemoMode) {
     return <Navigate to="/admin/login" replace />;
   }
 
