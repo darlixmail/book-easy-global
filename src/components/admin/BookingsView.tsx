@@ -18,7 +18,7 @@ interface BookingsViewProps {
 }
 
 export default function BookingsView({ bookings, title, showAllLink, onShowAll }: BookingsViewProps) {
-  const [viewMode, setViewMode] = useState<'list' | 'columns'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'columns'>('columns');
   const [serviceFilter, setServiceFilter] = useState<string>('all');
   const [timeFilter, setTimeFilter] = useState<string>('all');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -159,8 +159,8 @@ export default function BookingsView({ bookings, title, showAllLink, onShowAll }
               </Select>
               <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'columns')} className="h-8">
                 <TabsList className="h-8">
-                  <TabsTrigger value="list" className="text-xs px-2 h-6">List</TabsTrigger>
                   <TabsTrigger value="columns" className="text-xs px-2 h-6">By Staff</TabsTrigger>
+                  <TabsTrigger value="list" className="text-xs px-2 h-6">List</TabsTrigger>
                 </TabsList>
               </Tabs>
               {showAllLink && (

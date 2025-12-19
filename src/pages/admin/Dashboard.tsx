@@ -4,11 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, Package, Clock, User, Users } from 'lucide-react';
-import { demoBookings, demoEmployees, demoServices, demoBusiness, DemoBooking } from '@/data/demoData';
-import StatisticsPanel from '@/components/admin/StatisticsPanel';
+import { demoBookings, demoEmployees, demoBusiness, DemoBooking } from '@/data/demoData';
+import RevenueStatisticsCard from '@/components/admin/RevenueStatisticsCard';
 import BookingsView from '@/components/admin/BookingsView';
+import WeeklyBookingsView from '@/components/admin/WeeklyBookingsView';
 import ServicesOverview from '@/components/admin/ServicesOverview';
 import CalendarView from '@/components/admin/CalendarView';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
@@ -60,11 +60,29 @@ export default function Dashboard() {
       <main className="container mx-auto px-4 py-8 space-y-6">
         {isDemoMode && (
           <>
-            <StatisticsPanel bookings={bookings as DemoBooking[] || []} />
+            {/* Quick Navigation Cards - Revenue Stats is now clickable like the others */}
+            <div className="grid gap-6 md:grid-cols-4">
+              <RevenueStatisticsCard bookings={bookings as DemoBooking[] || []} />
+              
+              <Card className="cursor-pointer transition-all hover:shadow-medium" onClick={() => navigate('/admin/services')}>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" />{t('admin.services')}</CardTitle></CardHeader>
+                <CardContent><p className="text-sm text-muted-foreground">Manage your services and pricing</p></CardContent>
+              </Card>
+              <Card className="cursor-pointer transition-all hover:shadow-medium" onClick={() => navigate('/admin/schedule')}>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" />{t('admin.schedule')}</CardTitle></CardHeader>
+                <CardContent><p className="text-sm text-muted-foreground">Set your working hours</p></CardContent>
+              </Card>
+              <Card className="cursor-pointer transition-all hover:shadow-medium" onClick={() => navigate('/admin/profile')}>
+                <CardHeader><CardTitle className="flex items-center gap-2"><User className="h-5 w-5" />{t('admin.profile')}</CardTitle></CardHeader>
+                <CardContent><p className="text-sm text-muted-foreground">Update business information</p></CardContent>
+              </Card>
+            </div>
             
+            {/* Today's Bookings */}
             <BookingsView bookings={todayBookings} title="Today's Bookings" showAllLink />
             
-            <BookingsView bookings={weekBookings} title="This Week's Bookings" showAllLink />
+            {/* This Week's Bookings - Now with calendar view */}
+            <WeeklyBookingsView bookings={bookings as DemoBooking[] || []} />
 
             <div className="grid gap-6 lg:grid-cols-2">
               <ServicesOverview bookings={bookings as DemoBooking[] || []} todayBookings={todayBookings} weekBookings={weekBookings} />
@@ -104,20 +122,22 @@ export default function Dashboard() {
           </>
         )}
 
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="cursor-pointer transition-all hover:shadow-medium" onClick={() => navigate('/admin/services')}>
-            <CardHeader><CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" />{t('admin.services')}</CardTitle></CardHeader>
-            <CardContent><p className="text-sm text-muted-foreground">Manage your services and pricing</p></CardContent>
-          </Card>
-          <Card className="cursor-pointer transition-all hover:shadow-medium" onClick={() => navigate('/admin/schedule')}>
-            <CardHeader><CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" />{t('admin.schedule')}</CardTitle></CardHeader>
-            <CardContent><p className="text-sm text-muted-foreground">Set your working hours</p></CardContent>
-          </Card>
-          <Card className="cursor-pointer transition-all hover:shadow-medium" onClick={() => navigate('/admin/profile')}>
-            <CardHeader><CardTitle className="flex items-center gap-2"><User className="h-5 w-5" />{t('admin.profile')}</CardTitle></CardHeader>
-            <CardContent><p className="text-sm text-muted-foreground">Update business information</p></CardContent>
-          </Card>
-        </div>
+        {!isDemoMode && (
+          <div className="grid gap-6 md:grid-cols-3">
+            <Card className="cursor-pointer transition-all hover:shadow-medium" onClick={() => navigate('/admin/services')}>
+              <CardHeader><CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" />{t('admin.services')}</CardTitle></CardHeader>
+              <CardContent><p className="text-sm text-muted-foreground">Manage your services and pricing</p></CardContent>
+            </Card>
+            <Card className="cursor-pointer transition-all hover:shadow-medium" onClick={() => navigate('/admin/schedule')}>
+              <CardHeader><CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" />{t('admin.schedule')}</CardTitle></CardHeader>
+              <CardContent><p className="text-sm text-muted-foreground">Set your working hours</p></CardContent>
+            </Card>
+            <Card className="cursor-pointer transition-all hover:shadow-medium" onClick={() => navigate('/admin/profile')}>
+              <CardHeader><CardTitle className="flex items-center gap-2"><User className="h-5 w-5" />{t('admin.profile')}</CardTitle></CardHeader>
+              <CardContent><p className="text-sm text-muted-foreground">Update business information</p></CardContent>
+            </Card>
+          </div>
+        )}
       </main>
     </div>
   );
