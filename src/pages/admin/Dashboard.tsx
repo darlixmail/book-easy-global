@@ -1,22 +1,25 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Package, Clock, User, Users } from 'lucide-react';
-import { demoBookings, demoEmployees, demoBusiness, DemoBooking } from '@/data/demoData';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { LogOut, Package, Clock, User, BarChart3 } from 'lucide-react';
+import { demoBookings, demoBusiness, DemoBooking } from '@/data/demoData';
 import RevenueStatisticsCard from '@/components/admin/RevenueStatisticsCard';
 import BookingsView from '@/components/admin/BookingsView';
 import WeeklyBookingsView from '@/components/admin/WeeklyBookingsView';
-import ServicesOverview from '@/components/admin/ServicesOverview';
 import CalendarView from '@/components/admin/CalendarView';
+import ServicesStaffOverviewPage from '@/components/admin/ServicesStaffOverviewPage';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 
 export default function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+  const [showOverview, setShowOverview] = useState(false);
 
   const { data: bookings } = useQuery({
     queryKey: ['admin-bookings'],
@@ -40,10 +43,6 @@ export default function Dashboard() {
   const weekEnd = endOfWeek(today, { weekStartsOn: 0 });
 
   const todayBookings = (bookings as DemoBooking[] || []).filter(b => b.booking_date === todayStr);
-  const weekBookings = (bookings as DemoBooking[] || []).filter(b => {
-    const d = new Date(b.booking_date);
-    return d >= weekStart && d <= weekEnd;
-  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -60,10 +59,36 @@ export default function Dashboard() {
       <main className="container mx-auto px-4 py-8 space-y-6">
         {isDemoMode && (
           <>
-            {/* Quick Navigation Cards - Revenue Stats is now clickable like the others */}
-            <div className="grid gap-6 md:grid-cols-4">
+            {/* Top Row: Revenue Stats only */}
+            <div className="grid gap-6 md:grid-cols-2">
               <RevenueStatisticsCard bookings={bookings as DemoBooking[] || []} />
               
+              {/* Services & Staff Overview - Clickable Card (Owner Only) */}
+              <Card className="cursor-pointer transition-all hover:shadow-medium" onClick={() => setShowOverview(true)}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Services & Staff Overview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">View detailed performance statistics for services and staff members</p>
+                  <p className="text-xs text-muted-foreground mt-2 italic">Owner access only</p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Today's Bookings */}
+            <BookingsView bookings={todayBookings} title="Today's Bookings" showAllLink />
+            
+            {/* This Week's Bookings - Now with calendar view */}
+            <WeeklyBookingsView bookings={bookings as DemoBooking[] || []} />
+
+            {/* All Bookings Calendar */}
+            <CalendarView bookings={bookings as DemoBooking[] || []} />
+
+            {/* Bottom Navigation Cards */}
+            <div className="grid gap-6 md:grid-cols-3">
               <Card className="cursor-pointer transition-all hover:shadow-medium" onClick={() => navigate('/admin/services')}>
                 <CardHeader><CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" />{t('admin.services')}</CardTitle></CardHeader>
                 <CardContent><p className="text-sm text-muted-foreground">Manage your services and pricing</p></CardContent>
@@ -77,48 +102,6 @@ export default function Dashboard() {
                 <CardContent><p className="text-sm text-muted-foreground">Update business information</p></CardContent>
               </Card>
             </div>
-            
-            {/* Today's Bookings */}
-            <BookingsView bookings={todayBookings} title="Today's Bookings" showAllLink />
-            
-            {/* This Week's Bookings - Now with calendar view */}
-            <WeeklyBookingsView bookings={bookings as DemoBooking[] || []} />
-
-            <div className="grid gap-6 lg:grid-cols-2">
-              <ServicesOverview bookings={bookings as DemoBooking[] || []} todayBookings={todayBookings} weekBookings={weekBookings} />
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" />Staff Overview</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {demoEmployees.map(emp => {
-                      const empTodayBookings = todayBookings.filter(b => b.employee_id === emp.id);
-                      return (
-                        <div key={emp.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                              <User className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium">{emp.name}</p>
-                              <p className="text-sm text-muted-foreground">{emp.role}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold">{empTodayBookings.length}</p>
-                            <p className="text-xs text-muted-foreground">today</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <CalendarView bookings={bookings as DemoBooking[] || []} />
           </>
         )}
 
@@ -139,6 +122,16 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+
+      {/* Services & Staff Overview Dialog */}
+      <Dialog open={showOverview} onOpenChange={setShowOverview}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Services & Staff Overview</DialogTitle>
+          </DialogHeader>
+          <ServicesStaffOverviewPage bookings={bookings as DemoBooking[] || []} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

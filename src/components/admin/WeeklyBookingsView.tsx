@@ -164,11 +164,7 @@ export default function WeeklyBookingsView({ bookings }: WeeklyBookingsViewProps
 
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Button variant="ghost" size="sm" onClick={() => setSelectedDay(null)}>
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Week
-          </Button>
+        <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold">{format(selectedDay, 'EEEE, MMMM d, yyyy')}</h3>
         </div>
 
@@ -270,6 +266,12 @@ export default function WeeklyBookingsView({ bookings }: WeeklyBookingsViewProps
               <Button variant="ghost" size="sm" onClick={() => setIsExpanded(true)}>
                 View All <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
+              {selectedDay && (
+                <Button variant="ghost" size="sm" onClick={() => setSelectedDay(null)}>
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  Back to Week
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
