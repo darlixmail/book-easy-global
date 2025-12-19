@@ -55,10 +55,7 @@ export default function Home() {
             size="lg"
             variant="secondary"
             className="shadow-glow animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300"
-            onClick={() => {
-              const servicesSection = document.getElementById('services');
-              servicesSection?.scrollIntoView({ behavior: 'smooth' });
-            }}
+            onClick={() => navigate('/book')}
           >
             {t('hero.cta')}
           </Button>
