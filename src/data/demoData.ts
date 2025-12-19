@@ -94,6 +94,18 @@ const generateBookings = (): DemoBooking[] => {
 };
 
 export const demoBookings = generateBookings();
+
+// Demo schedules for each employee
+export const demoSchedules = demoEmployees.flatMap(emp => [
+  { id: `sch-${emp.id}-0`, business_id: demoBusiness.id, employee_id: emp.id, day_of_week: 0, start_time: '10:00', end_time: '18:00', is_available: true, created_at: new Date().toISOString() },
+  { id: `sch-${emp.id}-1`, business_id: demoBusiness.id, employee_id: emp.id, day_of_week: 1, start_time: '09:00', end_time: '18:00', is_available: true, created_at: new Date().toISOString() },
+  { id: `sch-${emp.id}-2`, business_id: demoBusiness.id, employee_id: emp.id, day_of_week: 2, start_time: '09:00', end_time: '18:00', is_available: true, created_at: new Date().toISOString() },
+  { id: `sch-${emp.id}-3`, business_id: demoBusiness.id, employee_id: emp.id, day_of_week: 3, start_time: '09:00', end_time: '18:00', is_available: true, created_at: new Date().toISOString() },
+  { id: `sch-${emp.id}-4`, business_id: demoBusiness.id, employee_id: emp.id, day_of_week: 4, start_time: '09:00', end_time: '18:00', is_available: true, created_at: new Date().toISOString() },
+  { id: `sch-${emp.id}-5`, business_id: demoBusiness.id, employee_id: emp.id, day_of_week: 5, start_time: '09:00', end_time: '14:00', is_available: true, created_at: new Date().toISOString() },
+  { id: `sch-${emp.id}-6`, business_id: demoBusiness.id, employee_id: emp.id, day_of_week: 6, start_time: '00:00', end_time: '00:00', is_available: false, created_at: new Date().toISOString() },
+]);
+
 export const getEmployeeById = (id: string) => demoEmployees.find(e => e.id === id);
 export const getServiceById = (id: string) => demoServices.find(s => s.id === id);
 export const getCustomerById = (id: string) => demoCustomers.find(c => c.id === id);
