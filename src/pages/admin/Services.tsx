@@ -29,16 +29,9 @@ export default function Services() {
   const [duration, setDuration] = useState('');
   const [price, setPrice] = useState('');
 
-  // Demo mode check
-  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
-
   const { data: business } = useQuery({
     queryKey: ['business'],
     queryFn: async () => {
-      if (isDemoMode) {
-        return { id: 'demo-business', name: 'Demo Beauty Salon', user_id: 'demo-user' };
-      }
-      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -55,45 +48,8 @@ export default function Services() {
 
   const { data: services } = useQuery({
     queryKey: ['admin-services', business?.id],
-    enabled: !!business?.id || isDemoMode,
+    enabled: !!business?.id,
     queryFn: async () => {
-      if (isDemoMode) {
-        return [
-          {
-            id: '1',
-            name: 'Haircut & Styling',
-            description: 'Professional haircut with styling',
-            duration_minutes: 60,
-            price: 50,
-            active: true
-          },
-          {
-            id: '2',
-            name: 'Hair Coloring',
-            description: 'Full hair coloring service',
-            duration_minutes: 120,
-            price: 120,
-            active: true
-          },
-          {
-            id: '3',
-            name: 'Manicure',
-            description: 'Complete manicure service',
-            duration_minutes: 45,
-            price: 35,
-            active: true
-          },
-          {
-            id: '4',
-            name: 'Pedicure',
-            description: 'Relaxing pedicure treatment',
-            duration_minutes: 50,
-            price: 40,
-            active: false
-          }
-        ];
-      }
-      
       const { data, error } = await supabase
         .from('services')
         .select('*')
@@ -107,9 +63,6 @@ export default function Services() {
 
   const createMutation = useMutation({
     mutationFn: async (serviceData: any) => {
-      if (isDemoMode) {
-        throw new Error('Cannot create services in demo mode');
-      }
       const { error } = await supabase.from('services').insert([serviceData]);
       if (error) throw error;
     },
@@ -126,9 +79,6 @@ export default function Services() {
 
   const deleteMutation = useMutation({
     mutationFn: async (serviceId: string) => {
-      if (isDemoMode) {
-        throw new Error('Cannot delete services in demo mode');
-      }
       const { error } = await supabase.from('services').delete().eq('id', serviceId);
       if (error) throw error;
     },
@@ -156,32 +106,43 @@ export default function Services() {
       return;
     }
 
+    const durationNum = parseInt(duration);
+    const priceNum = parseFloat(price);
+
+    // Client-side validation
+    if (durationNum <= 0) {
+      toast.error('Duration must be greater than 0');
+      return;
+    }
+
+    if (priceNum <= 0) {
+      toast.error('Price must be greater than 0');
+      return;
+    }
+
+    if (serviceName.length > 200) {
+      toast.error('Service name must be less than 200 characters');
+      return;
+    }
+
     createMutation.mutate({
       business_id: business.id,
-      name: serviceName,
-      description: description || null,
-      duration_minutes: parseInt(duration),
-      price: parseFloat(price),
+      name: serviceName.trim(),
+      description: description.trim() || null,
+      duration_minutes: durationNum,
+      price: priceNum,
       active: true,
     });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {isDemoMode && (
-        <div className="bg-primary/10 border-b border-primary/20 py-2 text-center">
-          <p className="text-sm font-medium text-primary">
-            🎭 Demo Mode - All data is simulated. Changes won't be saved.
-          </p>
-        </div>
-      )}
-      
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => navigate(isDemoMode ? '/admin/dashboard?demo=true' : '/admin/dashboard')}
+            onClick={() => navigate('/admin/dashboard')}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('admin.dashboard')}
@@ -195,9 +156,9 @@ export default function Services() {
           <h1 className="text-3xl font-bold">{t('admin.services')}</h1>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button disabled={isDemoMode}>
+              <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                {isDemoMode ? 'Demo Mode' : t('common.add')}
+                {t('common.add')}
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -211,6 +172,7 @@ export default function Services() {
                     id="name"
                     value={serviceName}
                     onChange={(e) => setServiceName(e.target.value)}
+                    maxLength={200}
                     required
                   />
                 </div>
@@ -220,6 +182,7 @@ export default function Services() {
                     id="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
+                    maxLength={1000}
                     rows={3}
                   />
                 </div>
@@ -229,6 +192,7 @@ export default function Services() {
                     <Input
                       id="duration"
                       type="number"
+                      min="1"
                       value={duration}
                       onChange={(e) => setDuration(e.target.value)}
                       required
@@ -240,6 +204,7 @@ export default function Services() {
                       id="price"
                       type="number"
                       step="0.01"
+                      min="0.01"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
                       required

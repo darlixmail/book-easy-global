@@ -23,24 +23,9 @@ export default function Profile() {
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
 
-  // Demo mode check
-  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
-
   const { data: business } = useQuery({
     queryKey: ['business'],
     queryFn: async () => {
-      if (isDemoMode) {
-        return {
-          id: 'demo-business',
-          user_id: 'demo-user',
-          name: 'Demo Beauty Salon',
-          contact_email: 'contact@demosalon.com',
-          contact_phone: '+1-555-0100',
-          address: '123 Main Street, New York, NY 10001',
-          description: 'A premier beauty salon offering a wide range of professional services including haircuts, coloring, manicures, and more. Our experienced team is dedicated to making you look and feel your best.'
-        };
-      }
-      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -67,10 +52,6 @@ export default function Profile() {
 
   const upsertMutation = useMutation({
     mutationFn: async (businessData: any) => {
-      if (isDemoMode) {
-        throw new Error('Cannot update profile in demo mode');
-      }
-      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -102,31 +83,39 @@ export default function Profile() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Client-side validation
+    if (businessName.trim().length > 200) {
+      toast.error('Business name must be less than 200 characters');
+      return;
+    }
+
+    if (contactPhone && contactPhone.length > 20) {
+      toast.error('Phone number must be less than 20 characters');
+      return;
+    }
+
+    if (description && description.length > 1000) {
+      toast.error('Description must be less than 1000 characters');
+      return;
+    }
+
     upsertMutation.mutate({
-      name: businessName,
-      contact_email: contactEmail || null,
-      contact_phone: contactPhone || null,
-      address: address || null,
-      description: description || null,
+      name: businessName.trim(),
+      contact_email: contactEmail.trim() || null,
+      contact_phone: contactPhone.trim() || null,
+      address: address.trim() || null,
+      description: description.trim() || null,
     });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {isDemoMode && (
-        <div className="bg-primary/10 border-b border-primary/20 py-2 text-center">
-          <p className="text-sm font-medium text-primary">
-            🎭 Demo Mode - All data is simulated. Changes won't be saved.
-          </p>
-        </div>
-      )}
-      
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => navigate(isDemoMode ? '/admin/dashboard?demo=true' : '/admin/dashboard')}
+            onClick={() => navigate('/admin/dashboard')}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('admin.dashboard')}
@@ -150,6 +139,7 @@ export default function Profile() {
                   id="businessName"
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
+                  maxLength={200}
                   required
                 />
               </div>
@@ -161,6 +151,7 @@ export default function Profile() {
                   type="email"
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
+                  maxLength={255}
                 />
               </div>
 
@@ -171,6 +162,7 @@ export default function Profile() {
                   type="tel"
                   value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}
+                  maxLength={20}
                 />
               </div>
 
@@ -180,6 +172,7 @@ export default function Profile() {
                   id="address"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
+                  maxLength={500}
                 />
               </div>
 
@@ -189,12 +182,13 @@ export default function Profile() {
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  maxLength={1000}
                   rows={4}
                 />
               </div>
 
-              <Button type="submit" disabled={upsertMutation.isPending || isDemoMode}>
-                {isDemoMode ? 'Demo Mode' : upsertMutation.isPending ? t('common.loading') : t('common.save')}
+              <Button type="submit" disabled={upsertMutation.isPending}>
+                {upsertMutation.isPending ? t('common.loading') : t('common.save')}
               </Button>
             </form>
           </CardContent>

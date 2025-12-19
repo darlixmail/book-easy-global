@@ -12,48 +12,9 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Demo mode check
-  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
-
   const { data: bookings } = useQuery({
     queryKey: ['admin-bookings'],
     queryFn: async () => {
-      if (isDemoMode) {
-        // Mock data for demo
-        return [
-          {
-            id: '1',
-            client_name: 'Sarah Johnson',
-            client_phone: '+1-555-0123',
-            client_email: 'sarah@example.com',
-            booking_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-            booking_time: '10:00',
-            status: 'confirmed',
-            services: { name: 'Haircut & Styling', duration_minutes: 60, price: 50 }
-          },
-          {
-            id: '2',
-            client_name: 'Michael Chen',
-            client_phone: '+1-555-0124',
-            client_email: 'michael@example.com',
-            booking_date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-            booking_time: '14:30',
-            status: 'pending',
-            services: { name: 'Hair Coloring', duration_minutes: 120, price: 120 }
-          },
-          {
-            id: '3',
-            client_name: 'Emma Williams',
-            client_phone: '+1-555-0125',
-            client_email: 'emma@example.com',
-            booking_date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-            booking_time: '09:00',
-            status: 'confirmed',
-            services: { name: 'Manicure', duration_minutes: 45, price: 35 }
-          }
-        ];
-      }
-      
       const { data, error } = await supabase
         .from('bookings')
         .select('*, services(*)')
@@ -66,16 +27,8 @@ export default function Dashboard() {
   });
 
   const handleLogout = async () => {
-    if (isDemoMode) {
-      navigate('/admin/login');
-      return;
-    }
     await supabase.auth.signOut();
     navigate('/admin/login');
-  };
-
-  const navigateWithDemo = (path: string) => {
-    navigate(isDemoMode ? `${path}?demo=true` : path);
   };
 
   const upcomingBookings = bookings?.filter(
@@ -84,14 +37,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {new URLSearchParams(window.location.search).get('demo') === 'true' && (
-        <div className="bg-primary/10 border-b border-primary/20 py-2 text-center">
-          <p className="text-sm font-medium text-primary">
-            🎭 Demo Mode - All data is simulated. Changes won't be saved.
-          </p>
-        </div>
-      )}
-      
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <h1 className="text-xl font-bold">{t('admin.dashboard')}</h1>
@@ -109,7 +54,7 @@ export default function Dashboard() {
         <div className="grid gap-6 md:grid-cols-3 mb-8">
           <Card
             className="cursor-pointer transition-all hover:shadow-medium"
-            onClick={() => navigateWithDemo('/admin/services')}
+            onClick={() => navigate('/admin/services')}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -126,7 +71,7 @@ export default function Dashboard() {
 
           <Card
             className="cursor-pointer transition-all hover:shadow-medium"
-            onClick={() => navigateWithDemo('/admin/schedule')}
+            onClick={() => navigate('/admin/schedule')}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -143,7 +88,7 @@ export default function Dashboard() {
 
           <Card
             className="cursor-pointer transition-all hover:shadow-medium"
-            onClick={() => navigateWithDemo('/admin/profile')}
+            onClick={() => navigate('/admin/profile')}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
