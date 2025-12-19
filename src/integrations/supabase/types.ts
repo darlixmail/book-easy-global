@@ -219,6 +219,7 @@ export type Database = {
           description: string | null
           duration_minutes: number
           id: string
+          image_url: string | null
           name: string
           price: number
           updated_at: string
@@ -230,6 +231,7 @@ export type Database = {
           description?: string | null
           duration_minutes: number
           id?: string
+          image_url?: string | null
           name: string
           price: number
           updated_at?: string
@@ -241,6 +243,7 @@ export type Database = {
           description?: string | null
           duration_minutes?: number
           id?: string
+          image_url?: string | null
           name?: string
           price?: number
           updated_at?: string

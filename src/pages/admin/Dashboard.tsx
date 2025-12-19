@@ -13,6 +13,7 @@ import BookingsView from '@/components/admin/BookingsView';
 import WeeklyBookingsView from '@/components/admin/WeeklyBookingsView';
 import CalendarView from '@/components/admin/CalendarView';
 import ServicesStaffOverviewPage from '@/components/admin/ServicesStaffOverviewPage';
+import StaffManagement from '@/components/admin/StaffManagement';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 
 export default function Dashboard() {
@@ -87,6 +88,8 @@ export default function Dashboard() {
             {/* All Bookings Calendar */}
             <CalendarView bookings={bookings as DemoBooking[] || []} />
 
+            {/* Staff Management */}
+            <StaffManagement businessId={demoBusiness.id} />
             {/* Bottom Navigation Cards */}
             <div className="grid gap-6 md:grid-cols-3">
               <Card className="cursor-pointer transition-all hover:shadow-medium" onClick={() => navigate('/admin/services')}>
