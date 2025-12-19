@@ -131,6 +131,25 @@ export default function BookingFlow() {
     ? demoBookings.filter(b => selectedDate && b.booking_date === format(selectedDate, 'yyyy-MM-dd'))
     : (existingBookings || []);
 
+  // Check if a date has available time slots
+  const isDateAvailable = (date: Date): boolean => {
+    if (!currentSchedules.length) return false;
+    
+    const dayOfWeek = date.getDay();
+    const daySchedules = currentSchedules.filter(s => s.day_of_week === dayOfWeek && s.is_available);
+    
+    if (daySchedules.length === 0) return false;
+    
+    // Get the business schedule (employee_id is null)
+    const businessSchedule = daySchedules.find(s => !s.employee_id);
+    if (!businessSchedule) return false;
+    
+    const startHour = parseInt(businessSchedule.start_time.split(':')[0]);
+    const endHour = parseInt(businessSchedule.end_time.split(':')[0]);
+    
+    return endHour > startHour;
+  };
+
   // Generate available time slots
   const availableSlots = useMemo(() => {
     if (!selectedDate || !currentSchedules.length) return [];
@@ -337,32 +356,39 @@ export default function BookingFlow() {
                         setSelectedTime('');
                         setSelectedEmployee('');
                       }}
-                      disabled={(date) => date < new Date()}
-                      className="rounded-md border"
+                      disabled={(date) => date < new Date() || !isDateAvailable(date)}
+                      className="rounded-md border pointer-events-auto"
                     />
                   </TabsContent>
 
                   <TabsContent value="list">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      {upcomingDates.map((date) => (
-                        <Button
-                          key={date.toISOString()}
-                          type="button"
-                          variant={selectedDate && isSameDay(selectedDate, date) ? 'default' : 'outline'}
-                          className="flex flex-col h-auto py-3"
-                          onClick={() => {
-                            setSelectedDate(date);
-                            setSelectedTime('');
-                            setSelectedEmployee('');
-                          }}
-                        >
-                          <span className="text-xs text-muted-foreground">
-                            {format(date, 'EEE')}
-                          </span>
-                          <span className="text-lg font-bold">{format(date, 'd')}</span>
-                          <span className="text-xs">{format(date, 'MMM')}</span>
-                        </Button>
-                      ))}
+                      {upcomingDates.map((date) => {
+                        const available = isDateAvailable(date);
+                        return (
+                          <Button
+                            key={date.toISOString()}
+                            type="button"
+                            variant={selectedDate && isSameDay(selectedDate, date) ? 'default' : 'outline'}
+                            className="flex flex-col h-auto py-3"
+                            disabled={!available}
+                            onClick={() => {
+                              setSelectedDate(date);
+                              setSelectedTime('');
+                              setSelectedEmployee('');
+                            }}
+                          >
+                            <span className="text-xs text-muted-foreground">
+                              {format(date, 'EEE')}
+                            </span>
+                            <span className="text-lg font-bold">{format(date, 'd')}</span>
+                            <span className="text-xs">{format(date, 'MMM')}</span>
+                            {!available && (
+                              <span className="text-[10px] text-destructive mt-1">Closed</span>
+                            )}
+                          </Button>
+                        );
+                      })}
                     </div>
                   </TabsContent>
                 </Tabs>
