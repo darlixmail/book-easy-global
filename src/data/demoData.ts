@@ -106,8 +106,51 @@ export const demoSchedules = demoEmployees.flatMap(emp => [
   { id: `sch-${emp.id}-6`, business_id: demoBusiness.id, employee_id: emp.id, day_of_week: 6, start_time: '00:00', end_time: '00:00', is_available: false, created_at: new Date().toISOString() },
 ]);
 
+// Demo service-employee mappings (which employees can provide which services)
+export const demoServiceEmployees = [
+  // Hair services - emp-1, emp-2, emp-3
+  { id: 'se-1', service_id: 'srv-1', employee_id: 'emp-1', created_at: new Date().toISOString() },
+  { id: 'se-2', service_id: 'srv-1', employee_id: 'emp-2', created_at: new Date().toISOString() },
+  { id: 'se-3', service_id: 'srv-1', employee_id: 'emp-3', created_at: new Date().toISOString() },
+  { id: 'se-4', service_id: 'srv-2', employee_id: 'emp-1', created_at: new Date().toISOString() },
+  { id: 'se-5', service_id: 'srv-2', employee_id: 'emp-2', created_at: new Date().toISOString() },
+  { id: 'se-6', service_id: 'srv-3', employee_id: 'emp-1', created_at: new Date().toISOString() },
+  { id: 'se-7', service_id: 'srv-3', employee_id: 'emp-2', created_at: new Date().toISOString() },
+  { id: 'se-8', service_id: 'srv-4', employee_id: 'emp-1', created_at: new Date().toISOString() },
+  { id: 'se-9', service_id: 'srv-4', employee_id: 'emp-3', created_at: new Date().toISOString() },
+  { id: 'se-10', service_id: 'srv-5', employee_id: 'emp-1', created_at: new Date().toISOString() },
+  { id: 'se-11', service_id: 'srv-5', employee_id: 'emp-2', created_at: new Date().toISOString() },
+  { id: 'se-12', service_id: 'srv-5', employee_id: 'emp-3', created_at: new Date().toISOString() },
+  // Nail services - emp-4, emp-5
+  { id: 'se-13', service_id: 'srv-6', employee_id: 'emp-4', created_at: new Date().toISOString() },
+  { id: 'se-14', service_id: 'srv-6', employee_id: 'emp-5', created_at: new Date().toISOString() },
+  { id: 'se-15', service_id: 'srv-7', employee_id: 'emp-4', created_at: new Date().toISOString() },
+  { id: 'se-16', service_id: 'srv-7', employee_id: 'emp-5', created_at: new Date().toISOString() },
+  { id: 'se-17', service_id: 'srv-8', employee_id: 'emp-4', created_at: new Date().toISOString() },
+  { id: 'se-18', service_id: 'srv-8', employee_id: 'emp-5', created_at: new Date().toISOString() },
+  // Cosmetic services - emp-6
+  { id: 'se-19', service_id: 'srv-9', employee_id: 'emp-6', created_at: new Date().toISOString() },
+  { id: 'se-20', service_id: 'srv-10', employee_id: 'emp-6', created_at: new Date().toISOString() },
+  { id: 'se-21', service_id: 'srv-11', employee_id: 'emp-6', created_at: new Date().toISOString() },
+];
+
+// Business-level schedule (when the business is open)
+export const demoBusinessSchedules = [
+  { id: 'bsch-0', business_id: demoBusiness.id, employee_id: null, day_of_week: 0, start_time: '10:00', end_time: '18:00', is_available: true, created_at: new Date().toISOString() },
+  { id: 'bsch-1', business_id: demoBusiness.id, employee_id: null, day_of_week: 1, start_time: '09:00', end_time: '18:00', is_available: true, created_at: new Date().toISOString() },
+  { id: 'bsch-2', business_id: demoBusiness.id, employee_id: null, day_of_week: 2, start_time: '09:00', end_time: '18:00', is_available: true, created_at: new Date().toISOString() },
+  { id: 'bsch-3', business_id: demoBusiness.id, employee_id: null, day_of_week: 3, start_time: '09:00', end_time: '18:00', is_available: true, created_at: new Date().toISOString() },
+  { id: 'bsch-4', business_id: demoBusiness.id, employee_id: null, day_of_week: 4, start_time: '09:00', end_time: '18:00', is_available: true, created_at: new Date().toISOString() },
+  { id: 'bsch-5', business_id: demoBusiness.id, employee_id: null, day_of_week: 5, start_time: '09:00', end_time: '14:00', is_available: true, created_at: new Date().toISOString() },
+  { id: 'bsch-6', business_id: demoBusiness.id, employee_id: null, day_of_week: 6, start_time: '00:00', end_time: '00:00', is_available: false, created_at: new Date().toISOString() },
+];
+
 export const getEmployeeById = (id: string) => demoEmployees.find(e => e.id === id);
 export const getServiceById = (id: string) => demoServices.find(s => s.id === id);
 export const getCustomerById = (id: string) => demoCustomers.find(c => c.id === id);
+export const getEmployeesForService = (serviceId: string) => {
+  const employeeIds = demoServiceEmployees.filter(se => se.service_id === serviceId).map(se => se.employee_id);
+  return demoEmployees.filter(e => employeeIds.includes(e.id));
+};
 export const calculateRevenue = (bookings: DemoBooking[]) => bookings.reduce((t, b) => b.status === 'cancelled' || b.status === 'no-show' ? t : t + (getServiceById(b.service_id)?.price || 0), 0);
 export const calculatePrepaidRevenue = (bookings: DemoBooking[]) => bookings.reduce((t, b) => b.is_prepaid && b.prepaid_amount ? t + b.prepaid_amount : t, 0);

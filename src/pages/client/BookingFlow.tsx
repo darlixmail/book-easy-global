@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,15 +11,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { format, addDays, isSameDay } from 'date-fns';
-import { Calendar as CalendarIcon, Clock, ArrowLeft, List, User } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, ArrowLeft, List, User, Sparkles, CheckCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  demoServices, 
+  demoBusiness, 
+  demoSchedules, 
+  demoBusinessSchedules,
+  demoBookings, 
+  getServiceById, 
+  getEmployeesForService 
+} from '@/data/demoData';
 
 export default function BookingFlow() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { serviceId } = useParams();
+  const [searchParams] = useSearchParams();
+  const isDemo = searchParams.get('demo') === 'true' || serviceId?.startsWith('srv-');
+  
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
@@ -28,9 +41,16 @@ export default function BookingFlow() {
   const [clientEmail, setClientEmail] = useState('');
   const [notes, setNotes] = useState('');
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [bookingComplete, setBookingComplete] = useState(false);
+
+  // Demo data
+  const demoService = isDemo && serviceId ? getServiceById(serviceId) : null;
+  const demoEmployees = isDemo && serviceId ? getEmployeesForService(serviceId) : [];
+  const allDemoSchedules = [...demoSchedules, ...demoBusinessSchedules];
 
   const { data: service } = useQuery({
     queryKey: ['service', serviceId],
+    enabled: !isDemo && !!serviceId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('services')
@@ -46,7 +66,7 @@ export default function BookingFlow() {
   // Fetch employees who can provide this service
   const { data: serviceEmployees } = useQuery({
     queryKey: ['service-employees', serviceId],
-    enabled: !!serviceId,
+    enabled: !isDemo && !!serviceId,
     queryFn: async () => {
       const { data: seData, error: seError } = await supabase
         .from('service_employees')
@@ -72,7 +92,7 @@ export default function BookingFlow() {
   // Fetch schedules for all employees
   const { data: schedules } = useQuery({
     queryKey: ['employee-schedules', service?.business_id],
-    enabled: !!service?.business_id,
+    enabled: !isDemo && !!service?.business_id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('schedules')
@@ -88,7 +108,7 @@ export default function BookingFlow() {
   // Fetch existing bookings
   const { data: existingBookings } = useQuery({
     queryKey: ['existing-bookings', service?.business_id, selectedDate],
-    enabled: !!service?.business_id && !!selectedDate,
+    enabled: !isDemo && !!service?.business_id && !!selectedDate,
     queryFn: async () => {
       const dateStr = format(selectedDate!, 'yyyy-MM-dd');
       const { data, error } = await supabase
@@ -103,12 +123,20 @@ export default function BookingFlow() {
     },
   });
 
+  // Get the actual data to use (demo or real)
+  const currentService = isDemo ? demoService : service;
+  const currentEmployees = isDemo ? demoEmployees : (serviceEmployees || []);
+  const currentSchedules = isDemo ? allDemoSchedules : (schedules || []);
+  const currentBookings = isDemo 
+    ? demoBookings.filter(b => selectedDate && b.booking_date === format(selectedDate, 'yyyy-MM-dd'))
+    : (existingBookings || []);
+
   // Generate available time slots
   const availableSlots = useMemo(() => {
-    if (!selectedDate || !schedules) return [];
+    if (!selectedDate || !currentSchedules.length) return [];
 
     const dayOfWeek = selectedDate.getDay();
-    const daySchedules = schedules.filter(s => s.day_of_week === dayOfWeek);
+    const daySchedules = currentSchedules.filter(s => s.day_of_week === dayOfWeek && s.is_available);
 
     if (daySchedules.length === 0) return [];
 
@@ -127,22 +155,22 @@ export default function BookingFlow() {
     }
 
     return slots;
-  }, [selectedDate, schedules]);
+  }, [selectedDate, currentSchedules]);
 
   // Check if an employee is available for a specific time slot
   const isEmployeeAvailable = (employeeId: string, timeSlot: string) => {
-    if (!selectedDate || !existingBookings || !schedules) return false;
+    if (!selectedDate || !currentSchedules.length) return false;
 
     const dayOfWeek = selectedDate.getDay();
 
     // Check if employee has a schedule for this day
-    const employeeSchedule = schedules.find(
-      s => s.employee_id === employeeId && s.day_of_week === dayOfWeek
+    const employeeSchedule = currentSchedules.find(
+      s => s.employee_id === employeeId && s.day_of_week === dayOfWeek && s.is_available
     );
 
     // If no specific schedule, check business schedule
-    const businessSchedule = schedules.find(
-      s => !s.employee_id && s.day_of_week === dayOfWeek
+    const businessSchedule = currentSchedules.find(
+      s => !s.employee_id && s.day_of_week === dayOfWeek && s.is_available
     );
 
     const schedule = employeeSchedule || businessSchedule;
@@ -156,7 +184,7 @@ export default function BookingFlow() {
     if (slotHour < scheduleStart || slotHour >= scheduleEnd) return false;
 
     // Check if employee already has a booking at this time
-    const hasBooking = existingBookings.some(
+    const hasBooking = currentBookings.some(
       b => b.employee_id === employeeId && b.booking_time === timeSlot
     );
 
@@ -194,6 +222,13 @@ export default function BookingFlow() {
       return;
     }
 
+    if (isDemo) {
+      // Simulate booking success for demo
+      setBookingComplete(true);
+      toast.success('Demo booking created successfully!');
+      return;
+    }
+
     bookingMutation.mutate({
       service_id: serviceId,
       business_id: service?.business_id,
@@ -206,6 +241,43 @@ export default function BookingFlow() {
       notes: notes || null,
     });
   };
+
+  // Demo booking complete state
+  if (bookingComplete && isDemo) {
+    const selectedEmployeeData = demoEmployees.find(e => e.id === selectedEmployee);
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardHeader>
+            <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <Badge variant="secondary" className="mx-auto mb-2 gap-1">
+              <Sparkles className="h-3 w-3" />
+              Demo Mode
+            </Badge>
+            <CardTitle className="text-2xl">Booking Confirmed!</CardTitle>
+            <CardDescription>Your demo appointment has been scheduled</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-muted/50 rounded-lg p-4 text-left space-y-2">
+              <p><strong>Service:</strong> {demoService?.name}</p>
+              <p><strong>Date:</strong> {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')}</p>
+              <p><strong>Time:</strong> {selectedTime}</p>
+              <p><strong>Staff:</strong> {selectedEmployeeData?.name}</p>
+              <p><strong>Price:</strong> ₪{demoService?.price}</p>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              This is a demo booking. In a real scenario, the customer would receive a confirmation email.
+            </p>
+            <Button onClick={() => navigate('/book')} className="w-full">
+              Book Another Service
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -222,10 +294,16 @@ export default function BookingFlow() {
       <div className="container mx-auto px-4 py-8">
         <Card className="mx-auto max-w-3xl shadow-medium">
           <CardHeader>
+            {isDemo && (
+              <Badge variant="secondary" className="w-fit mb-2 gap-1">
+                <Sparkles className="h-3 w-3" />
+                Demo Mode - {demoBusiness.name}
+              </Badge>
+            )}
             <CardTitle className="text-2xl">{t('booking.title')}</CardTitle>
-            {service && (
+            {currentService && (
               <CardDescription className="text-base">
-                {service.name} - {service.duration_minutes} min - ₪{service.price}
+                {currentService.name} - {currentService.duration_minutes} min - ₪{currentService.price}
               </CardDescription>
             )}
           </CardHeader>
@@ -316,15 +394,21 @@ export default function BookingFlow() {
                 </div>
               )}
 
+              {selectedDate && availableSlots.length === 0 && (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p>No available time slots for this date. Please select another day.</p>
+                </div>
+              )}
+
               {/* Step 3: Master/Staff Selection */}
-              {selectedDate && selectedTime && serviceEmployees && serviceEmployees.length > 0 && (
+              {selectedDate && selectedTime && currentEmployees.length > 0 && (
                 <div className="space-y-4">
                   <Label className="flex items-center gap-2 text-lg font-semibold">
                     <User className="h-5 w-5" />
                     3. {t('booking.selectMaster')}
                   </Label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {serviceEmployees.map((employee) => {
+                    {currentEmployees.map((employee) => {
                       const available = isEmployeeAvailable(employee.id, selectedTime);
                       const isSelected = selectedEmployee === employee.id;
 
@@ -352,6 +436,9 @@ export default function BookingFlow() {
                               </AvatarFallback>
                             </Avatar>
                             <p className="font-medium">{employee.name}</p>
+                            {isDemo && (employee as any).role && (
+                              <p className="text-xs text-muted-foreground mt-1">{(employee as any).role}</p>
+                            )}
                           </div>
                           {!available && (
                             <div className="absolute inset-0 flex items-center justify-center">
@@ -386,6 +473,7 @@ export default function BookingFlow() {
                         id="name"
                         value={clientName}
                         onChange={(e) => setClientName(e.target.value)}
+                        placeholder={isDemo ? "John Doe" : ""}
                         required
                       />
                     </div>
@@ -397,6 +485,7 @@ export default function BookingFlow() {
                         type="tel"
                         value={clientPhone}
                         onChange={(e) => setClientPhone(e.target.value)}
+                        placeholder={isDemo ? "+972-50-000-0000" : ""}
                         required
                       />
                     </div>
@@ -408,6 +497,7 @@ export default function BookingFlow() {
                         type="email"
                         value={clientEmail}
                         onChange={(e) => setClientEmail(e.target.value)}
+                        placeholder={isDemo ? "john@example.com" : ""}
                       />
                     </div>
 
