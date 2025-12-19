@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { Clock, ArrowLeft, Scissors } from 'lucide-react';
+import { Clock, ArrowLeft, Scissors, Image as ImageIcon } from 'lucide-react';
 
 export default function ServiceSelection() {
   const { t } = useTranslation();
@@ -55,20 +55,26 @@ export default function ServiceSelection() {
                 className="group cursor-pointer overflow-hidden border-2 transition-all hover:border-primary hover:shadow-medium hover:scale-[1.02]"
                 onClick={() => navigate(`/book/${service.id}`)}
               >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-primary/10">
-                      <Scissors className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{service.name}</CardTitle>
-                      {service.description && (
-                        <CardDescription className="text-sm line-clamp-2">
-                          {service.description}
-                        </CardDescription>
-                      )}
-                    </div>
+                {service.image_url ? (
+                  <div className="aspect-video w-full overflow-hidden bg-muted">
+                    <img 
+                      src={service.image_url} 
+                      alt={service.name} 
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                    />
                   </div>
+                ) : (
+                  <div className="aspect-video w-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                    <Scissors className="h-12 w-12 text-primary/30" />
+                  </div>
+                )}
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">{service.name}</CardTitle>
+                  {service.description && (
+                    <CardDescription className="text-sm line-clamp-2">
+                      {service.description}
+                    </CardDescription>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">

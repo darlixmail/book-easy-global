@@ -17,9 +17,10 @@ import {
 } from '@/components/ui/dialog';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Pencil, Image as ImageIcon } from 'lucide-react';
 import { demoBusiness, demoServices } from '@/data/demoData';
 import { Badge } from '@/components/ui/badge';
+import { ImageUpload } from '@/components/admin/ImageUpload';
 
 export default function Services() {
   const { t } = useTranslation();
@@ -30,6 +31,8 @@ export default function Services() {
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState('');
   const [price, setPrice] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [editingService, setEditingService] = useState<any>(null);
   const isDemoMode = localStorage.getItem('demo_mode') === 'true';
 
   const { data: business } = useQuery({
@@ -113,7 +116,39 @@ export default function Services() {
     setDescription('');
     setDuration('');
     setPrice('');
+    setImageUrl(null);
+    setEditingService(null);
   };
+
+  const openEditDialog = (service: any) => {
+    setEditingService(service);
+    setServiceName(service.name);
+    setDescription(service.description || '');
+    setDuration(service.duration_minutes.toString());
+    setPrice(service.price.toString());
+    setImageUrl(service.image_url || null);
+    setOpen(true);
+  };
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...serviceData }: any) => {
+      if (isDemoMode) {
+        toast.info('Demo mode: Changes are not saved');
+        return;
+      }
+      const { error } = await supabase.from('services').update(serviceData).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-services'] });
+      toast.success('Service updated successfully');
+      setOpen(false);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update service');
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,14 +176,23 @@ export default function Services() {
       return;
     }
 
-    createMutation.mutate({
-      business_id: business.id,
+    const serviceData = {
       name: serviceName.trim(),
       description: description.trim() || null,
       duration_minutes: durationNum,
       price: priceNum,
-      active: true,
-    });
+      image_url: imageUrl,
+    };
+
+    if (editingService) {
+      updateMutation.mutate({ id: editingService.id, ...serviceData });
+    } else {
+      createMutation.mutate({
+        business_id: business.id,
+        ...serviceData,
+        active: true,
+      });
+    }
   };
 
   // Group services by category for demo mode
@@ -180,18 +224,28 @@ export default function Services() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold">{t('admin.services')}</h1>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={() => resetForm()}>
                 <Plus className="mr-2 h-4 w-4" />
                 {t('common.add')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add New Service</DialogTitle>
+                <DialogTitle>{editingService ? 'Edit Service' : 'Add New Service'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Service Image (Optional)</Label>
+                  <ImageUpload
+                    currentImageUrl={imageUrl}
+                    onImageUploaded={setImageUrl}
+                    folder="services"
+                    aspectRatio="landscape"
+                    placeholder="Add Image"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="name">Service Name *</Label>
                   <Input
@@ -237,8 +291,8 @@ export default function Services() {
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? t('common.loading') : t('common.save')}
+                <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending}>
+                  {(createMutation.isPending || updateMutation.isPending) ? t('common.loading') : t('common.save')}
                 </Button>
               </form>
             </DialogContent>
@@ -255,17 +309,34 @@ export default function Services() {
             )}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {(categoryServices as any[])?.map((service: any) => (
-                <Card key={service.id}>
-                  <CardHeader>
+                <Card key={service.id} className="overflow-hidden">
+                  {service.image_url && (
+                    <div className="aspect-video w-full overflow-hidden bg-muted">
+                      <img src={service.image_url} alt={service.name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <CardHeader className={service.image_url ? 'pt-3' : ''}>
                     <CardTitle className="flex items-center justify-between">
-                      <span>{service.name}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteMutation.mutate(service.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <span className="flex items-center gap-2">
+                        {!service.image_url && <ImageIcon className="h-4 w-4 text-muted-foreground" />}
+                        {service.name}
+                      </span>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditDialog(service)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteMutation.mutate(service.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
