@@ -19,6 +19,7 @@ import Services from "./pages/admin/Services";
 import Schedule from "./pages/admin/Schedule";
 import Profile from "./pages/admin/Profile";
 
+import ProjectDocumentation from "./pages/ProjectDocumentation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +72,7 @@ const App = () => (
             }
           />
 
+          <Route path="/docs" element={<ProjectDocumentation />} />
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
