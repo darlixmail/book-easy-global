@@ -167,7 +167,7 @@ const BusinessPage = () => {
                       </div>
                     </div>
                     <div className="text-right ml-4 shrink-0">
-                      <span className="font-semibold text-foreground">${service.price}</span>
+                      <span className="font-semibold text-foreground">₪{service.price}</span>
                     </div>
                   </div>
                 </CardContent>
