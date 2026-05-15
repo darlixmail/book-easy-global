@@ -12,6 +12,7 @@ import ServiceSelection from "./pages/client/ServiceSelection";
 import BookingFlow from "./pages/client/BookingFlow";
 import BookingSuccess from "./pages/client/BookingSuccess";
 import BusinessPage from "./pages/client/BusinessPage";
+import BookingPage from "./pages/client/BookingPage";
 
 // Admin Pages
 import Login from "./pages/admin/Login";
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/book" element={<ServiceSelection />} />
           <Route path="/book/:serviceId" element={<BookingFlow />} />
           <Route path="/b/:slug" element={<BusinessPage />} />
+          <Route path="/b/:slug/book/:serviceId" element={<BookingPage />} />
           <Route path="/booking/success" element={<BookingSuccess />} />
 
           {/* Admin Routes */}
