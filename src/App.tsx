@@ -11,6 +11,7 @@ import Home from "./pages/client/Home";
 import ServiceSelection from "./pages/client/ServiceSelection";
 import BookingFlow from "./pages/client/BookingFlow";
 import BookingSuccess from "./pages/client/BookingSuccess";
+import BusinessPage from "./pages/client/BusinessPage";
 
 // Admin Pages
 import Login from "./pages/admin/Login";
