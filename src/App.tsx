@@ -36,6 +36,7 @@ const App = () => (
           <Route path="/" element={<Home />} />
           <Route path="/book" element={<ServiceSelection />} />
           <Route path="/book/:serviceId" element={<BookingFlow />} />
+          <Route path="/b/:slug" element={<BusinessPage />} />
           <Route path="/booking/success" element={<BookingSuccess />} />
 
           {/* Admin Routes */}
