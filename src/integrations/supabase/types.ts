@@ -20,6 +20,7 @@ export type Database = {
           booking_time: string
           business_id: string
           client_email: string | null
+          client_id: string | null
           client_name: string
           client_phone: string
           created_at: string
@@ -27,6 +28,7 @@ export type Database = {
           id: string
           notes: string | null
           service_id: string
+          source: string | null
           status: string
           updated_at: string
         }
@@ -35,6 +37,7 @@ export type Database = {
           booking_time: string
           business_id: string
           client_email?: string | null
+          client_id?: string | null
           client_name: string
           client_phone: string
           created_at?: string
@@ -42,6 +45,7 @@ export type Database = {
           id?: string
           notes?: string | null
           service_id: string
+          source?: string | null
           status?: string
           updated_at?: string
         }
@@ -50,6 +54,7 @@ export type Database = {
           booking_time?: string
           business_id?: string
           client_email?: string | null
+          client_id?: string | null
           client_name?: string
           client_phone?: string
           created_at?: string
@@ -57,6 +62,7 @@ export type Database = {
           id?: string
           notes?: string | null
           service_id?: string
+          source?: string | null
           status?: string
           updated_at?: string
         }
@@ -66,6 +72,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
           {
@@ -80,38 +93,103 @@ export type Database = {
       businesses: {
         Row: {
           address: string | null
+          category: string | null
+          city: string | null
           contact_email: string | null
           contact_phone: string | null
+          cover_url: string | null
           created_at: string
           description: string | null
           id: string
+          is_published: boolean | null
+          lat: number | null
+          lng: number | null
+          logo_url: string | null
           name: string
+          slug: string | null
           updated_at: string
           user_id: string
+          whatsapp: string | null
         }
         Insert: {
           address?: string | null
+          category?: string | null
+          city?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          cover_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          is_published?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          logo_url?: string | null
           name: string
+          slug?: string | null
           updated_at?: string
           user_id: string
+          whatsapp?: string | null
         }
         Update: {
           address?: string | null
+          category?: string | null
+          city?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          cover_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          is_published?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          logo_url?: string | null
           name?: string
+          slug?: string | null
           updated_at?: string
           user_id?: string
+          whatsapp?: string | null
         }
         Relationships: []
+      }
+      clients: {
+        Row: {
+          business_id: string
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       employees: {
         Row: {
@@ -148,6 +226,54 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      schedule_exceptions: {
+        Row: {
+          business_id: string
+          created_at: string | null
+          date: string
+          employee_id: string | null
+          end_time: string | null
+          id: string
+          start_time: string | null
+          type: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string | null
+          date: string
+          employee_id?: string | null
+          end_time?: string | null
+          id?: string
+          start_time?: string | null
+          type: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string | null
+          date?: string
+          employee_id?: string | null
+          end_time?: string | null
+          id?: string
+          start_time?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_exceptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_exceptions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       schedules: {
         Row: {
